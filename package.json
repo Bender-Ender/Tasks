@@ -11,7 +11,8 @@
     "test": "vitest run",
     "db:local": "wrangler d1 migrations apply tasks-db --local",
     "db:remote": "wrangler d1 migrations apply tasks-db --remote",
-    "shot": "node scripts/screenshot.mjs"
+    "shot": "node scripts/screenshot.mjs",
+    "verify:ui": "node scripts/verify-ui.mjs screenshots"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.102.3",

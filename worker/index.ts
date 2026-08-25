@@ -237,6 +237,19 @@ app.delete('/api/tasks/:id', async (c) => {
   return c.body(null, 204);
 });
 
+app.post('/api/tasks/:id/restore', async (c) => {
+  const userId = c.get('userId');
+  const id = c.req.param('id');
+  const res = await c.env.DB.prepare(
+    `UPDATE tasks SET deleted_at = NULL, updated_at = ? WHERE id = ? AND user_id = ? AND deleted_at IS NOT NULL`,
+  )
+    .bind(now(), id, userId)
+    .run();
+
+  if (res.meta.changes === 0) throw new HttpError(404, 'task not found');
+  return c.json(await mustGetTask(c.env.DB, userId, id));
+});
+
 /* ------------------------------------------------------------ subtasks */
 
 app.post('/api/tasks/:id/subtasks', async (c) => {

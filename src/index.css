@@ -1,0 +1,98 @@
+@import 'tailwindcss';
+
+/* Manual override wins over the system preference in both directions;
+   with no data-theme attribute the system setting decides. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  --c-bg: #fbfaf7;
+  --c-surface: #ffffff;
+  --c-sunk: #f4f1ea;
+  --c-border: #e7e3da;
+  --c-border-strong: #d4cec1;
+  --c-ink: #2e2a24;
+  --c-muted: #7c756b;
+  --c-faint: #a9a296;
+  --c-accent: #2f6b5e;
+  --c-accent-ink: #ffffff;
+  --c-accent-soft: #e3efea;
+  --c-overdue: #b3402c;
+  --c-overdue-soft: #f8e8e4;
+  --c-soon: #96660f;
+  --c-soon-soft: #f8efdc;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --c-bg: #1c1a17;
+    --c-surface: #26231f;
+    --c-sunk: #211e1b;
+    --c-border: #37332d;
+    --c-border-strong: #4a443a;
+    --c-ink: #efebe3;
+    --c-muted: #a29a8e;
+    --c-faint: #7c7469;
+    --c-accent: #5aa792;
+    --c-accent-ink: #12211d;
+    --c-accent-soft: #22352f;
+    --c-overdue: #e0725c;
+    --c-overdue-soft: #392420;
+    --c-soon: #d69b3f;
+    --c-soon-soft: #33291a;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --c-bg: #1c1a17;
+  --c-surface: #26231f;
+  --c-sunk: #211e1b;
+  --c-border: #37332d;
+  --c-border-strong: #4a443a;
+  --c-ink: #efebe3;
+  --c-muted: #a29a8e;
+  --c-faint: #7c7469;
+  --c-accent: #5aa792;
+  --c-accent-ink: #12211d;
+  --c-accent-soft: #22352f;
+  --c-overdue: #e0725c;
+  --c-overdue-soft: #392420;
+  --c-soon: #d69b3f;
+  --c-soon-soft: #33291a;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-sunk: var(--c-sunk);
+  --color-line: var(--c-border);
+  --color-line-strong: var(--c-border-strong);
+  --color-ink: var(--c-ink);
+  --color-muted: var(--c-muted);
+  --color-faint: var(--c-faint);
+  --color-accent: var(--c-accent);
+  --color-accent-ink: var(--c-accent-ink);
+  --color-accent-soft: var(--c-accent-soft);
+  --color-overdue: var(--c-overdue);
+  --color-overdue-soft: var(--c-overdue-soft);
+  --color-soon: var(--c-soon);
+  --color-soon-soft: var(--c-soon-soft);
+
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background: var(--c-bg);
+  color: var(--c-ink);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}

@@ -1,0 +1,33 @@
+{
+  "artboards": [
+    { "file": "Main.dc.html",       "title": "Mobile · Today",            "x": 0,    "y": 0,    "w": 390,  "h": 844 },
+    { "file": "AllList.dc.html",    "title": "Mobile · All + multi-select","x": 470,  "y": 0,    "w": 390,  "h": 844 },
+    { "file": "TaskDetail.dc.html", "title": "Mobile · Task detail",      "x": 940,  "y": 0,    "w": 390,  "h": 920 },
+
+    { "file": "TodayDark.dc.html",  "title": "Mobile · Today (dark)",     "x": 0,    "y": 1000, "w": 390,  "h": 844 },
+    { "file": "CardStates.dc.html", "title": "Card states · light + dark","x": 470,  "y": 1000, "w": 860,  "h": 844 },
+
+    { "file": "Desktop.dc.html",    "title": "Desktop · three-pane",      "x": 0,    "y": 1970, "w": 1440, "h": 900 },
+
+    { "file": "DirectionB.dc.html", "title": "Alt B · dense utilitarian", "x": 0,    "y": 2990, "w": 390,  "h": 844 },
+    { "file": "DirectionC.dc.html", "title": "Alt C · bold high-contrast","x": 470,  "y": 2990, "w": 390,  "h": 844 }
+  ],
+  "annotations": [
+    {
+      "id": "direction",
+      "x": 0, "y": -210, "w": 700,
+      "text": "Direction A — \"quiet paper\". Warm off-white, Newsreader for screen titles over IBM Plex Sans, one deep-green accent, flat colour and hairline borders instead of heavy shadows. Red and amber are reserved entirely for deadline signalling, so category colours never fight them.\n\nStart top-left and work right: Today, then the All list mid-planning-pass, then a task detail."
+    },
+    {
+      "id": "desktop-note",
+      "x": 1520, "y": 1970, "w": 420,
+      "text": "The three-pane answer to your screen-real-estate point: sidebar, list, detail side by side. The width is used without needing Kanban buckets, and editing a field never navigates you away from the list.\n\nBottom right is the always-visible keyboard legend."
+    },
+    {
+      "id": "alternates",
+      "x": 940, "y": 2990, "w": 420,
+      "text": "Two low-fi alternates, in case Direction A is not the feel you want.\n\nB — dense and utilitarian. One row per task, hard rules, tabular dates. Fits far more on screen; colder.\n\nC — bold and high-contrast. Large type, dark ground, almost no chrome. Striking on a phone; slower to scan when the list gets long.\n\nThese are sketches, not finished screens. Say A, B or C and I will build the rest to match."
+    }
+  ],
+  "launch": { "view": "canvas" }
+}

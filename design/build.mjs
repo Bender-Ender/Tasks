@@ -107,6 +107,7 @@ const ICON = {
   cal: (s = 17) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>`,
   trash: (s = 17) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>`,
   sunrise: (s = 17) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v5M6.5 10.5L5 9M17.5 10.5L19 9M3 18h18M6 18a6 6 0 0 1 12 0"/></svg>`,
+  panel: (s = 15) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M14.5 4v16"/></svg>`,
   drag: (s = 16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>`,
 };
 
@@ -311,11 +312,11 @@ const cardStates = `
 
 /* ------------------------------------------------------------- desktop */
 
+/* ------------------------------------------------------------- desktop */
+
 const deskCats = [['Work', 'work', 8], ['Home', 'home', 6], ['Health', 'health', 2], ['Errands', 'errands', 4], ['Admin', 'admin', 3]];
 
-const desktop = `
-<div style="display:grid;grid-template-columns:258px 428px minmax(0,1fr);min-height:100vh;background:var(--bg)">
-
+const deskSidebar = `
   <aside style="border-right:1px solid var(--border);padding:26px 14px;display:flex;flex-direction:column;gap:26px;background:var(--sunk)">
     <div style="font-family:'Newsreader',Georgia,serif;font-size:23px;font-weight:500;padding:0 10px;letter-spacing:-.01em">Tasks</div>
 
@@ -341,8 +342,10 @@ const desktop = `
       ${[['Completed'], ['Export JSON'], ['Appearance']].map(([l]) => `
         <div style="min-height:32px;display:flex;align-items:center;padding:0 10px;font-size:13px;color:var(--faint)">${l}</div>`).join('')}
     </div>
-  </aside>
+  </aside>`;
 
+/** middle column: the Today list. selected = highlight the open task */
+const deskTodayCol = (selected) => `
   <section style="border-right:1px solid var(--border);display:flex;flex-direction:column;min-width:0">
     <div style="padding:26px 22px 14px;border-bottom:1px solid var(--border)">
       <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
@@ -356,19 +359,39 @@ const desktop = `
         </div>
       </div>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding:14px 18px">
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding:14px 18px;overflow:hidden">
       ${card(T.dentist)}
-      ${card({ ...T.board, style: 'border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)' })}
+      ${card(selected ? { ...T.board, style: 'border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)' } : T.board)}
       ${card(T.tap)}
       ${card(T.priya)}
       ${card(T.car)}
       <div class="secthead"><span>Completed today &middot; 2</span><span class="rule"></span>${ICON.down(15)}</div>
     </div>
-  </section>
+  </section>`;
 
+
+/** always-visible keyboard legend, bottom right */
+const legend = `
+    <div style="position:absolute;right:20px;bottom:18px;display:flex;align-items:center;gap:11px;
+      padding:8px 13px;border-radius:9px;background:var(--surface);border:1px solid var(--border);
+      box-shadow:var(--shadow);font-size:11.5px;color:var(--faint)">
+      ${[['N', 'new'], ['/', 'search'], ['J K', 'move'], ['X', 'done'], ['T', 'today'], ['\\', 'panel']].map(([k, l]) => `
+        <span style="display:inline-flex;align-items:center;gap:5px">
+          <kbd style="font-family:inherit;font-size:10.5px;font-weight:600;padding:2px 5px;border-radius:4px;background:var(--sunk);border:1px solid var(--border);color:var(--muted)">${k}</kbd>${l}</span>`).join('')}
+      <span style="width:1px;height:13px;background:var(--border)"></span>
+      <kbd style="font-family:inherit;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;background:var(--sunk);border:1px solid var(--border);color:var(--muted)">?</kbd>
+    </div>`;
+
+/** right column, state 1: the task detail pane */
+const deskDetail = `
   <section style="display:flex;flex-direction:column;min-width:0;position:relative">
     <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 26px;border-bottom:1px solid var(--border)">
-      <span style="display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:600">${ICON.sunrise(16)} On Today</span>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--border);border-radius:8px;font-size:12px;color:var(--muted)">
+          ${ICON.panel(15)} Hide
+          <kbd style="font-family:inherit;font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;background:var(--sunk);border:1px solid var(--border)">\\</kbd></span>
+        <span style="display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:600">${ICON.sunrise(16)} On Today</span>
+      </div>
       <div style="display:flex;gap:14px;color:var(--faint)">${ICON.cal(18)}${ICON.trash(18)}${ICON.more(18)}</div>
     </div>
 
@@ -410,75 +433,73 @@ const desktop = `
         </div>
       </div>
     </div>
+    ${legend}
+  </section>`;
 
-    <div style="position:absolute;right:20px;bottom:18px;display:flex;align-items:center;gap:11px;
-      padding:8px 13px;border-radius:9px;background:var(--surface);border:1px solid var(--border);
-      box-shadow:var(--shadow);font-size:11.5px;color:var(--faint)">
-      ${[['N', 'new'], ['/', 'search'], ['J K', 'move'], ['X', 'done'], ['T', 'today']].map(([k, l]) => `
-        <span style="display:inline-flex;align-items:center;gap:5px">
-          <kbd style="font-family:inherit;font-size:10.5px;font-weight:600;padding:2px 5px;border-radius:4px;background:var(--sunk);border:1px solid var(--border);color:var(--muted)">${k}</kbd>${l}</span>`).join('')}
-      <span style="width:1px;height:13px;background:var(--border)"></span>
-      <kbd style="font-family:inherit;font-size:10.5px;font-weight:600;padding:2px 6px;border-radius:4px;background:var(--sunk);border:1px solid var(--border);color:var(--muted)">?</kbd>
-    </div>
-  </section>
-</div>`;
+/* right column, state 2: detail hidden -> the backlog fills the space,
+   two columns, flowing top-down, scrolling vertically. */
 
-/* --------------------------------------------------- low-fi alternates */
+const BACKLOG = [
+  { t: 'Chase the invoice from Meridian', cat: { n: 'Work', v: 'work' }, od: '2 days overdue' },
+  { t: 'Put the recycling out', cat: { n: 'Home', v: 'home' }, soon: 'Due today' },
+  { t: 'Read the pension transfer paperwork', cat: { n: 'Admin', v: 'admin' }, due: 'Mon 1 Sep' },
+  { t: 'Write up the retro notes', cat: { n: 'Work', v: 'work' }, due: 'Wed 3 Sep', prog: '3/6' },
+  { t: 'Update the emergency contacts form', cat: { n: 'Admin', v: 'admin' }, due: 'Thu 4 Sep' },
+  { t: 'Pick up dry cleaning', cat: { n: 'Errands', v: 'errands' } },
+  { t: "Plan Mum's birthday dinner", cat: { n: 'Home', v: 'home' }, due: 'Fri 12 Sep', prog: '0/4' },
+  { t: 'Book the car in for its service', cat: { n: 'Errands', v: 'errands' }, due: 'Tue 16 Sep' },
+  { t: 'Cancel the old gym membership', cat: { n: 'Admin', v: 'admin' } },
+  { t: 'Draft the Lisbon itinerary' },
+  { t: 'Sort the boxes in the loft', cat: { n: 'Home', v: 'home' } },
+  { t: 'Order more coffee', cat: { n: 'Errands', v: 'errands' } },
+  { t: 'Reschedule the physio session', cat: { n: 'Health', v: 'health' }, due: 'Fri 5 Sep' },
+  { t: 'Review the Meridian contract redlines', cat: { n: 'Work', v: 'work' }, due: 'Mon 8 Sep', prog: '0/3' },
+  { t: 'Replace the smoke alarm batteries', cat: { n: 'Home', v: 'home' } },
+  { t: 'Send Dad the photos from the weekend' },
+];
 
-const sketchCSS = `
-body{font-family:'IBM Plex Sans',system-ui,sans-serif}
-.sk{width:100%;min-height:100vh;background:#F5F4F1;display:flex;flex-direction:column}
-.blk{background:#DDDAD3;border-radius:4px;display:block}
-`;
+/** backlog card = compact card plus a hover affordance to lift it into Today */
+const backlogCard = (t, hover) => card(t).replace(
+  '</div>\n    </article>',
+  `</div>
+      <span style="flex:0 0 auto;width:30px;height:30px;margin:-4px -5px 0 0;border-radius:8px;display:flex;align-items:center;justify-content:center;
+        ${hover ? 'background:var(--accent);color:var(--accent-ink);' : 'color:var(--border-strong);'}">${ICON.sunrise(16)}</span>
+    </article>`
+);
 
-const directionB = `
-<div class="sk" style="background:#F2F1EE">
-  <div style="padding:50px 18px 12px;border-bottom:2px solid #22201D">
-    <div style="display:flex;align-items:baseline;justify-content:space-between">
-      <div style="font-size:15px;font-weight:700;letter-spacing:.14em;text-transform:uppercase">Today</div>
-      <div style="font-size:12px;color:#6E6A63;font-variant-numeric:tabular-nums">05 / 23</div>
-    </div>
-  </div>
-  <div style="flex:1;display:flex;flex-direction:column">
-    ${[['Book dentist appointment', 'HEALTH', '-4d', 1], ['Draft Q3 board update', 'WORK', 'TODAY', 0],
-       ['Fix the leaking kitchen tap', 'HOME', '30/8', 0], ['Reply to Priya re Lisbon', '&mdash;', '', 0],
-       ['Renew car insurance', 'ADMIN', '27/8', 0], ['Put the recycling out', 'HOME', 'TODAY', 0]].map(([t, c, d, od]) => `
-      <div style="display:flex;align-items:center;gap:12px;min-height:56px;padding:0 18px;border-bottom:1px solid #D8D5CE">
-        <span style="width:17px;height:17px;border:2px solid #22201D;flex:0 0 auto"></span>
-        <span style="flex:1;min-width:0;font-size:14.5px;line-height:1.25">${t}</span>
-        <span style="font-size:9.5px;font-weight:700;letter-spacing:.08em;color:#6E6A63">${c}</span>
-        <span style="font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;width:44px;text-align:right;${od ? 'color:#B3402C' : 'color:#6E6A63'}">${d}</span>
-      </div>`).join('')}
-  </div>
-  <div style="display:flex;border-top:2px solid #22201D">
-    ${['TODAY', 'ALL', 'FIND'].map((l, i) => `<div style="flex:1;min-height:52px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:.1em;${i ? 'border-left:1px solid #D8D5CE;color:#6E6A63' : 'background:#22201D;color:#F2F1EE'}">${l}</div>`).join('')}
-  </div>
-</div>`;
-
-const directionC = `
-<div class="sk" style="background:#141311;color:#F2EFE9">
-  <div style="padding:56px 22px 20px">
-    <div style="font-size:52px;line-height:.95;font-weight:600;letter-spacing:-.035em">Today</div>
-    <div style="margin-top:12px;font-size:13px;color:#8C857B">Five things. One is late.</div>
-  </div>
-  <div style="flex:1;display:flex;flex-direction:column;gap:12px;padding:8px 16px 20px">
-    ${[['Book dentist appointment', '#E0725C', '4 days late'], ['Draft Q3 board update', '#E4E0D8', 'today &middot; 2 of 5'],
-       ['Fix the leaking kitchen tap', '#E4E0D8', 'sat &middot; 1 of 3'], ['Reply to Priya re Lisbon', '#E4E0D8', ''],
-       ['Renew car insurance', '#E4E0D8', 'wed']].map(([t, col, m]) => `
-      <div style="display:flex;gap:14px;align-items:flex-start;padding:16px 4px;border-bottom:1px solid #2A2724">
-        <span style="width:20px;height:20px;border-radius:50%;border:2px solid #4A453D;margin-top:2px;flex:0 0 auto"></span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:19px;line-height:1.22;font-weight:500;letter-spacing:-.012em;color:${col}">${t}</div>
-          ${m ? `<div style="margin-top:6px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#8C857B">${m}</div>` : ''}
+const deskBacklog = `
+  <section style="display:flex;flex-direction:column;min-width:0;position:relative;overflow:hidden">
+    <div style="padding:26px 24px 14px;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-family:'Newsreader',Georgia,serif;font-size:29px;font-weight:500;letter-spacing:-.012em">Everything else</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:5px">16 tasks not on Today &middot; 1 overdue</div>
         </div>
-      </div>`).join('')}
-  </div>
-  <div style="padding:0 16px 30px;display:flex;gap:10px">
-    <div style="flex:1;min-height:52px;border-radius:26px;background:#F2EFE9;color:#141311;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600">Add a task</div>
-    <div style="width:52px;height:52px;border-radius:26px;border:1px solid #2A2724;display:flex;align-items:center;justify-content:center;color:#8C857B">${ICON.stack(20)}</div>
-  </div>
+        <span style="display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border:1px solid var(--border);border-radius:8px;font-size:12.5px;color:var(--muted)">
+          ${ICON.panel(15)} Show detail
+          <kbd style="font-family:inherit;font-size:10px;font-weight:600;padding:1px 4px;border-radius:3px;background:var(--sunk);border:1px solid var(--border)">\\</kbd></span>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:14px">
+        ${[['All', 1], ['Work', 0], ['Home', 0], ['Health', 0], ['Errands', 0], ['Admin', 0]].map(([l, on]) => `
+          <span style="padding:5px 12px;border-radius:999px;font-size:12px;font-weight:500;
+            ${on ? 'background:var(--ink);color:var(--bg);' : 'background:var(--surface);color:var(--muted);border:1px solid var(--border);'}">${l}</span>`).join('')}
+      </div>
+    </div>
+    <div style="flex:1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;align-content:start;padding:14px 24px 14px 18px">
+      ${BACKLOG.map((t, i) => backlogCard(t, i === 3)).join('')}
+    </div>
+    ${legend}
+  </section>`;
+
+const deskGrid = (right, selected) => `
+<div style="display:grid;grid-template-columns:258px 428px minmax(0,1fr);min-height:100vh;background:var(--bg)">
+  ${deskSidebar}
+  ${deskTodayCol(selected)}
+  ${right}
 </div>`;
 
+const desktop = deskGrid(deskDetail, true);
+const desktopPlanning = deskGrid(deskBacklog, false);
 /* ----------------------------------------------------------- assemble */
 
 function page({ theme = LIGHT, extraCSS = '', body }) {
@@ -504,15 +525,16 @@ ${body}
 `;
 }
 
+
 const OUT = {
-  'Main.dc.html':        page({ body: todayScreen }),
-  'AllList.dc.html':     page({ body: allScreen }),
-  'TaskDetail.dc.html':  page({ body: detailScreen }),
-  'TodayDark.dc.html':   page({ theme: DARK, body: todayScreen }),
-  'CardStates.dc.html':  page({ body: cardStates }),
-  'Desktop.dc.html':     page({ body: desktop }),
-  'DirectionB.dc.html':  page({ extraCSS: sketchCSS, body: directionB }),
-  'DirectionC.dc.html':  page({ extraCSS: sketchCSS, body: directionC }),
+  'Main.dc.html':            page({ body: todayScreen }),
+  'AllList.dc.html':         page({ body: allScreen }),
+  'TaskDetail.dc.html':      page({ body: detailScreen }),
+  'TodayDark.dc.html':       page({ theme: DARK, body: todayScreen }),
+  'CardStates.dc.html':      page({ body: cardStates }),
+  'Desktop.dc.html':         page({ body: desktop }),
+  'DesktopPlanning.dc.html': page({ body: desktopPlanning }),
+  'DesktopDark.dc.html':     page({ theme: DARK, body: desktopPlanning }),
 };
 
 for (const [name, html] of Object.entries(OUT)) {

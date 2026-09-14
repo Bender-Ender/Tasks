@@ -10,8 +10,7 @@
     {
       "binding": "DB",
       "database_name": "tasks-db",
-      // Replaced with the real id at Phase 4, when the remote D1 is created.
-      "database_id": "local-development-placeholder",
+      "database_id": "60073ff9-1579-4752-916b-1593ac495b9c",
       "migrations_dir": "migrations"
     }
   ],

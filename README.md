@@ -48,10 +48,17 @@ Deletes are soft (`deleted_at`).
 
 ## Identity
 
-In production the app sits behind Cloudflare Access, which injects a verified
-`Cf-Access-Authenticated-User-Email`; the app itself never handles a credential. Locally there is no
-Access in front, so `worker/auth.ts` ignores that header outside production and falls back to a
-single fixed user. Every query is scoped by `user_id` either way.
+One person uses this app. Cloudflare Access decides who reaches it at all and the app itself never
+handles a credential; past that gate `worker/auth.ts` returns a single constant owner, and every
+query is scoped by that `user_id`.
+
+Identity used to be the Access email, gated on an `ENVIRONMENT` var, and both drifted. `wrangler
+deploy` replaces a Worker's vars with whatever the committed config declares, so a deploy dropped
+the var and sent every query to the fallback user; Access signs in automatically and asserts
+whichever address it likes, which split the rows across two emails. Each time the tasks were still
+there and the app could not see them. A constant cannot be lost by a deploy or changed by a
+sign-in. The `user_id` column and its indexes are untouched, so per-user identity can come back
+without a schema change — see `migrations/0003_single_owner.sql`.
 
 ## Design
 

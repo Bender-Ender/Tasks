@@ -6,6 +6,7 @@ import { useMediaQuery } from './hooks/useMediaQuery';
 import { TaskCard } from './components/TaskCard';
 import { TaskDetail } from './components/TaskDetail';
 import { Plus } from './components/Icons';
+import { CategoryChips, Sidebar, TabBar, viewTitle, type View } from './components/Nav';
 
 /** Above this the detail sits beside the list; below it, it covers the screen. */
 const PANE_LAYOUT = '(min-width: 1024px)';
@@ -16,6 +17,9 @@ export function App() {
   const twoPane = useMediaQuery(PANE_LAYOUT);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  // Real data has no isToday flags yet, so defaulting to Today would open onto
+  // an empty app. All tasks is the view that is never surprising.
+  const [view, setView] = useState<View>({ kind: 'all' });
 
   const close = useCallback(() => setSelectedId(null), []);
 
@@ -50,6 +54,26 @@ export function App() {
   const selected = tasks.find((t) => t.id === selectedId) ?? null;
   const subtasksOf = (id: string) => subtasks.filter((s) => s.taskId === id).sort((a, b) => a.sortOrder - b.sortOrder);
 
+  // Counts are always of open work, so a category that is entirely done reads
+  // as 0 rather than quietly disagreeing with "Nothing open" in the list.
+  const todayCount = open.filter((t) => t.isToday).length;
+  const categoryCounts = new Map(categories.map((c) => [c.id, open.filter((t) => t.categoryId === c.id).length]));
+
+  const inView = (t: Task) => {
+    if (view.kind === 'today') return t.isToday;
+    if (view.kind === 'category') return t.categoryId === view.id;
+    return true;
+  };
+  const visible = open.filter(inView);
+  const doneInView = tasks.filter((t) => t.completed && inView(t)).length;
+
+  const emptyCopy =
+    view.kind === 'today'
+      ? 'Nothing flagged for today. Open a task and add it to Today.'
+      : view.kind === 'category'
+        ? `No open tasks in ${viewTitle(view, categories)}.`
+        : 'Nothing open. Add something above.';
+
   const complete = (task: Task, completed: boolean) => {
     state.updateTask.mutate({ id: task.id, patch: { completed } });
     if (completed) {
@@ -69,7 +93,10 @@ export function App() {
     e.preventDefault();
     const title = draft.trim();
     if (!title) return;
-    state.createTask.mutate({ id: state.newId(), title });
+    // A task added while filtered would otherwise vanish the moment it is
+    // created, so it inherits whatever filter it was created under.
+    const defaults = view.kind === 'today' ? { isToday: true } : view.kind === 'category' ? { categoryId: view.id } : {};
+    state.createTask.mutate({ id: state.newId(), title, ...defaults });
     setDraft('');
   };
 
@@ -95,12 +122,16 @@ export function App() {
   const list = (
     <div className="flex h-full flex-col">
       <header className="shrink-0 px-5 pt-[max(2.5rem,env(safe-area-inset-top))] pb-2 lg:px-6 lg:pt-7">
-        <h1 className="font-display text-4xl leading-none font-medium tracking-tight lg:text-[29px]">Tasks</h1>
+        <h1 className="font-display text-4xl leading-none font-medium tracking-tight lg:text-[29px]">
+          {viewTitle(view, categories)}
+        </h1>
         <p className="text-muted mt-2 text-xs">
-          {open.length === 0 ? 'Nothing open' : `${open.length} open`}
-          {tasks.length > open.length && ` · ${tasks.length - open.length} done`}
+          {visible.length === 0 ? 'Nothing open' : `${visible.length} open`}
+          {doneInView > 0 && ` · ${doneInView} done`}
         </p>
       </header>
+
+      {!twoPane && view.kind !== 'today' && <CategoryChips view={view} categories={categories} onSelect={setView} />}
 
       <form onSubmit={add} className="flex shrink-0 gap-2 px-5 py-3 lg:px-6">
         <input
@@ -121,12 +152,12 @@ export function App() {
         </button>
       </form>
 
-      <div className="flex-1 overflow-y-auto px-5 pb-24 lg:px-6 lg:pb-8">
-        {open.length === 0 ? (
-          <p className="text-faint py-16 text-center text-sm">Nothing open. Add something above.</p>
+      <div className="flex-1 overflow-y-auto px-5 pb-28 lg:px-6 lg:pb-8">
+        {visible.length === 0 ? (
+          <p className="text-faint py-16 text-center text-sm">{emptyCopy}</p>
         ) : (
           <ul className="flex flex-col gap-2.5">
-            {open.map((task) => (
+            {visible.map((task) => (
               <li key={task.id}>
                 <TaskCard
                   task={task}
@@ -146,7 +177,15 @@ export function App() {
 
   if (twoPane) {
     return (
-      <div className="grid h-full grid-cols-[minmax(360px,428px)_minmax(0,1fr)]">
+      <div className="grid h-full grid-cols-[220px_minmax(360px,428px)_minmax(0,1fr)]">
+        <Sidebar
+          view={view}
+          onSelect={setView}
+          todayCount={todayCount}
+          allCount={open.length}
+          categories={categories}
+          categoryCounts={categoryCounts}
+        />
         <div className="border-line min-w-0 border-r">{list}</div>
         <div className="min-w-0">
           {detail ?? (
@@ -162,6 +201,7 @@ export function App() {
   return (
     <div className="mx-auto h-full max-w-xl">
       {list}
+      {!selectedId && <TabBar view={view} onSelect={setView} />}
       {detail && <div className="bg-bg fixed inset-0 z-40">{detail}</div>}
     </div>
   );

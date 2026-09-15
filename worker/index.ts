@@ -16,7 +16,6 @@ import { toCategory, toSubtask, toTask, type CategoryRow, type SubtaskRow, type 
 
 interface Env {
   DB: D1Database;
-  ENVIRONMENT?: string;
 }
 
 type Ctx = { Bindings: Env; Variables: { userId: string } };
@@ -24,7 +23,7 @@ type Ctx = { Bindings: Env; Variables: { userId: string } };
 const app = new Hono<Ctx>();
 
 app.use('/api/*', async (c, next) => {
-  c.set('userId', userIdFrom(c.req.raw, c.env.ENVIRONMENT === 'production'));
+  c.set('userId', userIdFrom());
   await next();
 });
 

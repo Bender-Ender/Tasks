@@ -1,0 +1,4 @@
+# The tombstone worker only works if browsers see it promptly rather than a
+# cached copy of the worker it replaces.
+/sw.js
+  Cache-Control: no-cache

@@ -1,5 +1,6 @@
 import type { Category, Subtask, Task } from '@shared/schema';
 import { shortDeadline, urgencyOf } from '../lib/dates';
+import { playTickSound } from '../lib/sound';
 import { Check, Chevron } from './Icons';
 
 export function Checkbox({
@@ -25,6 +26,10 @@ export function Checkbox({
       aria-label={label}
       onClick={(e) => {
         e.stopPropagation();
+        // Every checkbox in the app is this one, so completing anything —
+        // task or sub-task, list or detail — sounds the same. Only on the way
+        // in: un-ticking is a correction, not an achievement.
+        if (!checked) playTickSound();
         onChange(!checked);
       }}
       className="flex size-11 shrink-0 items-center justify-center"

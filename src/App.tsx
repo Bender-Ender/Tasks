@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { LIMITS, type Category, type Task } from '@shared/schema';
+import { reorderVisible } from '@shared/order';
 import { useAppState } from './hooks/useAppState';
 import { useToast } from './hooks/useToasts';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { TaskCard } from './components/TaskCard';
 import { TaskDetail } from './components/TaskDetail';
 import { CategoryEditor } from './components/CategoryEditor';
-import { Plus } from './components/Icons';
+import { SortableList } from './components/SortableList';
+import { Drag, Plus } from './components/Icons';
 import { CategoryChips, Sidebar, TabBar, viewTitle, type View } from './components/Nav';
 
 /** Above this the detail sits beside the list; below it, it covers the screen. */
@@ -170,20 +172,40 @@ export function App() {
         {visible.length === 0 ? (
           <p className="text-faint py-16 text-center text-sm">{emptyCopy}</p>
         ) : (
-          <ul className="flex flex-col gap-2.5">
-            {visible.map((task) => (
-              <li key={task.id}>
-                <TaskCard
-                  task={task}
-                  category={categories.find((c) => c.id === task.categoryId)}
-                  subtasks={subtasksOf(task.id)}
-                  selected={twoPane && task.id === selectedId}
-                  onOpen={() => setSelectedId(task.id)}
-                  onComplete={(next) => complete(task, next)}
-                />
-              </li>
-            ))}
-          </ul>
+          <SortableList
+            items={visible}
+            className="flex flex-col gap-2.5"
+            onMove={(from, to) => {
+              // Computed against the full (unfiltered) order, not just this
+              // view — see reorderVisible for why that matters.
+              const rows = reorderVisible(open, visible, from, to);
+              if (rows.length) state.reorderTasks.mutate(rows);
+            }}
+          >
+            {(task, { handle, dragging }) => (
+              <TaskCard
+                task={task}
+                category={categories.find((c) => c.id === task.categoryId)}
+                subtasks={subtasksOf(task.id)}
+                selected={twoPane && task.id === selectedId}
+                dragging={dragging}
+                onOpen={() => setSelectedId(task.id)}
+                onComplete={(next) => complete(task, next)}
+                trailing={
+                  // Stop the click the handle generates on release from
+                  // bubbling to the card's onOpen — a tap or a drag on the
+                  // handle should never open the detail pane.
+                  <span
+                    {...handle}
+                    onClick={(e) => e.stopPropagation()}
+                    className="text-faint flex size-11 shrink-0 items-center justify-center"
+                  >
+                    <Drag size={16} />
+                  </span>
+                }
+              />
+            )}
+          </SortableList>
         )}
       </div>
     </div>

@@ -75,6 +75,7 @@ export function TaskCard({
   subtasks,
   selected,
   expanded,
+  dragging,
   onOpen,
   onComplete,
   onToggleSubtask,
@@ -85,6 +86,7 @@ export function TaskCard({
   subtasks: Subtask[];
   selected?: boolean;
   expanded?: boolean;
+  dragging?: boolean;
   onOpen: () => void;
   onComplete: (next: boolean) => void;
   onToggleSubtask?: (id: string, completed: boolean) => void;
@@ -106,7 +108,7 @@ export function TaskCard({
       }}
       className={`bg-surface group flex w-full gap-3 rounded-xl border p-3.5 text-left transition-colors ${
         selected ? 'border-accent ring-accent ring-1' : 'border-line hover:border-line-strong'
-      }`}
+      } ${dragging ? 'shadow-lg' : ''}`}
     >
       <Checkbox checked={task.completed} onChange={onComplete} label={`Complete ${task.title}`} />
 

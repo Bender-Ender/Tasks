@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { moveItem, orderAtEnd, orderAtStart, orderBetween, rebalance } from '../shared/order';
+import { moveItem, orderAtEnd, orderAtStart, orderBetween, rebalance, reorderVisible } from '../shared/order';
 
 const list = (...orders: number[]) => orders.map((sortOrder, i) => ({ id: `t${i}`, sortOrder }));
 
@@ -71,5 +71,52 @@ describe('rebalance', () => {
   it('spreads a collapsed list back onto clean keys', () => {
     const out = rebalance(list(1, 1.0000001, 1.0000002));
     expect(out.map((o) => o.sortOrder)).toEqual([1024, 2048, 3072]);
+  });
+});
+
+describe('reorderVisible', () => {
+  const item = (id: string, sortOrder: number) => ({ id, sortOrder });
+  const orderOf = (rows: { id: string; sortOrder: number }[]) =>
+    [...rows].sort((a, b) => a.sortOrder - b.sortOrder).map((r) => r.id);
+
+  it('is a no-op for a move that changes nothing', () => {
+    const full = [item('v0', 1), item('v1', 2), item('v2', 3)];
+    expect(reorderVisible(full, full, 1, 1)).toEqual([]);
+    expect(reorderVisible(full, full, 5, 0)).toEqual([]);
+  });
+
+  it('touches only the dragged row, leaving a hidden item between its old neighbours', () => {
+    // h sits between v0 and v1 in the full (unfiltered) order but is not part
+    // of the view being dragged in.
+    const v0 = item('v0', 1000);
+    const h = item('h', 1400);
+    const v1 = item('v1', 2000);
+    const v2 = item('v2', 3000);
+    const full = [v0, h, v1, v2];
+    const visible = [v0, v1, v2];
+
+    // Drag v2 to sit between v0 and v1 in the filtered view.
+    const rows = reorderVisible(full, visible, 2, 1);
+    expect(rows).toEqual([{ id: 'v2', sortOrder: 1500 }]);
+
+    const merged = full.map((t) => (t.id === rows[0]!.id ? { ...t, sortOrder: rows[0]!.sortOrder } : t));
+    // h is still sandwiched between v0 and v1 — its neighbours never moved.
+    expect(orderOf(merged)).toEqual(['v0', 'h', 'v2', 'v1']);
+  });
+
+  it('rebalances the full list, not just the visible slice, when the gap collapses', () => {
+    const v0 = item('v0', 1);
+    const h = item('h', 1.0000000005); // hidden, sits between v0 and v1
+    const v1 = item('v1', 1 + 1e-9); // gap to v0 has collapsed
+    const v2 = item('v2', 2);
+    const full = [v0, h, v1, v2];
+    const visible = [v0, v1, v2];
+
+    // Drag v2 to between v0 and v1 — the collapsed v0/v1 gap forces a rebalance.
+    const rows = reorderVisible(full, visible, 2, 1);
+
+    expect(rows).toHaveLength(full.length); // every row is renumbered, hidden included
+    expect(orderOf(rows)).toEqual(['v0', 'v2', 'h', 'v1']);
+    expect(rows.map((r) => r.sortOrder)).toEqual(expect.arrayContaining([1024, 2048, 3072, 4096]));
   });
 });

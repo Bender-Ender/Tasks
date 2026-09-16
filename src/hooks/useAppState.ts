@@ -125,6 +125,14 @@ export function useAppState() {
     }),
   });
 
+  const reorderTasks = useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) => api.reorderTasks(items),
+    ...optimistic<{ id: string; sortOrder: number }[]>(qc, (s, items) => {
+      const moved = new Map(items.map((i) => [i.id, i.sortOrder]));
+      return { ...s, tasks: s.tasks.map((t) => (moved.has(t.id) ? { ...t, sortOrder: moved.get(t.id)! } : t)) };
+    }),
+  });
+
   const createCategory = useMutation({
     mutationFn: (input: { id: string; name: string; color: string }) => api.createCategory(input),
     ...optimistic<{ id: string; name: string; color: string }>(qc, (s, input) => ({
@@ -165,6 +173,7 @@ export function useAppState() {
     updateSubtask,
     deleteSubtask,
     reorderSubtasks,
+    reorderTasks,
     createCategory,
     updateCategory,
     deleteCategory,

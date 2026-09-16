@@ -63,21 +63,23 @@ describe('playTickSound with audio', () => {
     delete (globalThis as { window?: unknown }).window;
   });
 
-  // The chosen sound is a major third — E5 then G#5 — struck as bells. Each
-  // note rings on five inharmonic partials, so two notes schedule ten
-  // oscillators. Pinning the notes here means changing the sound has to be a
-  // decision rather than a drift.
-  it('strikes E5 and G#5, five partials each', () => {
+  // The chosen sound is an open fifth — E5 and B5 — struck as bells. Each note
+  // rings on five inharmonic partials, so two notes schedule ten oscillators.
+  // Pinning the notes here means changing the sound has to be a decision
+  // rather than a drift.
+  it('strikes E5 and B5, five partials each', () => {
     expect(audio.frequencies).toHaveLength(10);
 
     const e5 = audio.frequencies.slice(0, 5);
-    const gs5 = audio.frequencies.slice(5);
+    const b5 = audio.frequencies.slice(5);
 
     expect(e5[0]).toBeCloseTo(659.25, 2);
-    expect(gs5[0]).toBeCloseTo(830.61, 2);
+    expect(b5[0]).toBeCloseTo(987.77, 2);
 
-    // A major third is a frequency ratio of about 1.26.
-    expect(gs5[0]! / e5[0]!).toBeCloseTo(1.26, 2);
+    // A perfect fifth is a frequency ratio of 3:2. The fifth is left open —
+    // no third between the two — which is what keeps it clear rather than
+    // cheerful.
+    expect(b5[0]! / e5[0]!).toBeCloseTo(1.5, 2);
   });
 
   it('rings each note on partials that are not whole multiples', () => {
@@ -89,10 +91,17 @@ describe('playTickSound with audio', () => {
     for (const ratio of ratios) expect(Math.abs(ratio - Math.round(ratio))).toBeGreaterThan(0.005);
   });
 
-  it('delays the second note so the third is heard as rising, not as a chord', () => {
+  // The whole point of this sound is that it is NOT a melodic figure — two
+  // notes far enough apart to be heard in sequence is what made the previous
+  // chime read as Duolingo's. Below roughly 50ms an ear stops separating them
+  // into events, so the gap staying small is the property to protect.
+  it('strikes the two notes close enough together to read as one event', () => {
     expect(audio.started).toHaveLength(10);
     const firstNote = Math.min(...audio.started.slice(0, 5));
     const secondNote = Math.min(...audio.started.slice(5));
-    expect(secondNote - firstNote).toBeCloseTo(0.085, 3);
+    const gap = secondNote - firstNote;
+
+    expect(gap).toBeCloseTo(0.012, 3);
+    expect(gap).toBeLessThan(0.05);
   });
 });

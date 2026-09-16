@@ -1,4 +1,4 @@
-/** The completion chime: a major third, struck as two bells.
+/** The completion chime: an open fifth, struck as two bells at once.
  *
  *  Synthesised rather than shipped as an audio file: a few hundred bytes of
  *  code instead of a request, and nothing to fetch at the moment it has to
@@ -22,9 +22,9 @@ function ready(): AudioContext | null {
 }
 
 /** A bell rings on partials that are not whole-number multiples of its note,
- *  and the high ones die away first. That inharmonicity is the whole
- *  difference between a struck bell and a stack of plain sines, which is what
- *  this used to be. Each entry is [frequency multiple, level, tail length]. */
+ *  and the high ones die away first. That inharmonicity is the difference
+ *  between a struck bell and a stack of plain sines. Each entry is
+ *  [frequency multiple, level, tail length]. */
 const PARTIALS: readonly (readonly [number, number, number])[] = [
   [1, 1, 1],
   [2.01, 0.52, 0.7],
@@ -33,18 +33,24 @@ const PARTIALS: readonly (readonly [number, number, number])[] = [
   [5.43, 0.07, 0.16],
 ];
 
-/** E5 then G♯5 — a major third apart, rising. Major and upward is the part the
- *  ear hears as good news rather than merely loud, which matters more than
- *  volume for something that fires dozens of times a day.
+/** E5 and B5 — a fifth apart, and struck together rather than in sequence.
+ *
+ *  Two notes played one after another form a short melodic figure, and a
+ *  melodic figure is the thing an ear recognises and files against something
+ *  it has heard before; that is what made the previous rising third read as
+ *  Duolingo's. Landing them 12ms apart is under the threshold where they
+ *  separate into events, so this arrives as one bright thing instead. The
+ *  fifth is left open — no third between them — which reads as clear rather
+ *  than cheerful, and wears better for something heard dozens of times a day.
  *  Each entry is [hz, delay, decay] in seconds. */
 const NOTES: readonly (readonly [number, number, number])[] = [
-  [659.25, 0, 0.7],
-  [830.61, 0.085, 0.75],
+  [659.25, 0, 1.2],
+  [987.77, 0.012, 1.2],
 ];
 
 /** Quiet on purpose. Loudness is the first thing to grate on a sound heard
- *  this often; the interval is doing the work instead. */
-const PEAK = 0.09;
+ *  this often; the interval and the ring are doing the work instead. */
+const PEAK = 0.063;
 
 function strike(ac: AudioContext, out: AudioNode, at: number, hz: number, decay: number): void {
   for (const [multiple, level, tail] of PARTIALS) {

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LIMITS, type Task } from '@shared/schema';
+import { LIMITS, type Category, type Task } from '@shared/schema';
 import { useAppState } from './hooks/useAppState';
 import { useToast } from './hooks/useToasts';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import { TaskCard } from './components/TaskCard';
 import { TaskDetail } from './components/TaskDetail';
+import { CategoryEditor } from './components/CategoryEditor';
 import { Plus } from './components/Icons';
 import { CategoryChips, Sidebar, TabBar, viewTitle, type View } from './components/Nav';
 
@@ -17,6 +18,7 @@ export function App() {
   const twoPane = useMediaQuery(PANE_LAYOUT);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [categoryEditorOpen, setCategoryEditorOpen] = useState(false);
   // Real data has no isToday flags yet, so defaulting to Today would open onto
   // an empty app. All tasks is the view that is never surprising.
   const [view, setView] = useState<View>({ kind: 'all' });
@@ -40,11 +42,13 @@ export function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedId) dismiss();
+      // The category editor owns Escape while it is open, so this does not
+      // also close the detail pane underneath it on desktop.
+      if (e.key === 'Escape' && selectedId && !categoryEditorOpen) dismiss();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [selectedId, dismiss]);
+  }, [selectedId, dismiss, categoryEditorOpen]);
 
   if (state.isPending) return <Centred>Loading…</Centred>;
   if (state.error) return <Centred>{state.error.message}</Centred>;
@@ -89,6 +93,14 @@ export function App() {
     toast.show(`Deleted “${task.title}”`, () => state.restoreTask.mutate(task.id));
   };
 
+  // Categories are hard-deleted (no restore endpoint), so there is no undo —
+  // just a confirmation, already given by CategoryEditor before this runs.
+  const removeCategory = (category: Category) => {
+    state.deleteCategory.mutate(category.id);
+    if (view.kind === 'category' && view.id === category.id) setView({ kind: 'all' });
+    toast.show(`Deleted “${category.name}”`);
+  };
+
   const add = (e: React.FormEvent) => {
     e.preventDefault();
     const title = draft.trim();
@@ -131,7 +143,9 @@ export function App() {
         </p>
       </header>
 
-      {!twoPane && view.kind !== 'today' && <CategoryChips view={view} categories={categories} onSelect={setView} />}
+      {!twoPane && view.kind !== 'today' && (
+        <CategoryChips view={view} categories={categories} onSelect={setView} onManage={() => setCategoryEditorOpen(true)} />
+      )}
 
       <form onSubmit={add} className="flex shrink-0 gap-2 px-5 py-3 lg:px-6">
         <input
@@ -175,6 +189,21 @@ export function App() {
     </div>
   );
 
+  const categoryEditor = categoryEditorOpen && (
+    <CategoryEditor
+      categories={categories}
+      tasks={tasks}
+      newId={state.newId}
+      onClose={() => setCategoryEditorOpen(false)}
+      actions={{
+        onCreate: (input) => state.createCategory.mutate(input),
+        onRename: (id, name) => state.updateCategory.mutate({ id, patch: { name } }),
+        onRecolor: (id, color) => state.updateCategory.mutate({ id, patch: { color } }),
+        onDelete: removeCategory,
+      }}
+    />
+  );
+
   if (twoPane) {
     return (
       <div className="grid h-full grid-cols-[220px_minmax(360px,428px)_minmax(0,1fr)]">
@@ -185,6 +214,7 @@ export function App() {
           allCount={open.length}
           categories={categories}
           categoryCounts={categoryCounts}
+          onManageCategories={() => setCategoryEditorOpen(true)}
         />
         <div className="border-line min-w-0 border-r">{list}</div>
         <div className="min-w-0">
@@ -194,6 +224,7 @@ export function App() {
             </div>
           )}
         </div>
+        {categoryEditor}
       </div>
     );
   }
@@ -203,6 +234,7 @@ export function App() {
       {list}
       {!selectedId && <TabBar view={view} onSelect={setView} />}
       {detail && <div className="bg-bg fixed inset-0 z-40">{detail}</div>}
+      {categoryEditor}
     </div>
   );
 }

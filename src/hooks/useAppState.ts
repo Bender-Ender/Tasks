@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
-import type { AppState, Subtask, Task, UpdateSubtask, UpdateTask } from '@shared/schema';
+import type { AppState, Subtask, Task, UpdateCategory, UpdateSubtask, UpdateTask } from '@shared/schema';
 import { orderAtEnd } from '@shared/order';
 import { api, newId } from '../api';
 
@@ -125,6 +125,36 @@ export function useAppState() {
     }),
   });
 
+  const createCategory = useMutation({
+    mutationFn: (input: { id: string; name: string; color: string }) => api.createCategory(input),
+    ...optimistic<{ id: string; name: string; color: string }>(qc, (s, input) => ({
+      ...s,
+      categories: [
+        ...s.categories,
+        { sortOrder: orderAtEnd(s.categories), createdAt: new Date().toISOString(), ...input },
+      ],
+    })),
+  });
+
+  const updateCategory = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: UpdateCategory }) => api.updateCategory(id, patch),
+    ...optimistic<{ id: string; patch: UpdateCategory }>(qc, (s, { id, patch }) => ({
+      ...s,
+      categories: s.categories.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    })),
+  });
+
+  /** The FK is ON DELETE SET NULL, so tasks in the category survive — the
+   *  optimistic patch mirrors that rather than dropping them from the list. */
+  const deleteCategory = useMutation({
+    mutationFn: (id: string) => api.deleteCategory(id),
+    ...optimistic<string>(qc, (s, id) => ({
+      ...s,
+      categories: s.categories.filter((c) => c.id !== id),
+      tasks: s.tasks.map((t) => (t.categoryId === id ? { ...t, categoryId: null } : t)),
+    })),
+  });
+
   return {
     ...query,
     createTask,
@@ -135,6 +165,9 @@ export function useAppState() {
     updateSubtask,
     deleteSubtask,
     reorderSubtasks,
+    createCategory,
+    updateCategory,
+    deleteCategory,
     newId,
   };
 }

@@ -1,4 +1,5 @@
 import type { Category } from '@shared/schema';
+import { ManageCategoriesButton } from './CategoryEditor';
 import { Stack, Sunrise } from './Icons';
 
 /** Today/All/category-filter. A discriminated union rather than three
@@ -21,6 +22,7 @@ export function Sidebar({
   allCount,
   categories,
   categoryCounts,
+  onManageCategories,
 }: {
   view: View;
   onSelect: (view: View) => void;
@@ -28,6 +30,7 @@ export function Sidebar({
   allCount: number;
   categories: Category[];
   categoryCounts: Map<string, number>;
+  onManageCategories: () => void;
 }) {
   return (
     <aside className="border-line bg-sunk flex w-full flex-col gap-6 overflow-y-auto border-r px-3.5 py-6">
@@ -50,21 +53,24 @@ export function Sidebar({
         />
       </nav>
 
-      {categories.length > 0 && (
-        <div className="flex flex-col gap-0.5">
-          <h2 className="text-faint px-2.5 pb-1 text-[11px] font-semibold tracking-[0.08em] uppercase">Categories</h2>
-          {categories.map((c) => (
-            <NavRow
-              key={c.id}
-              active={view.kind === 'category' && view.id === c.id}
-              icon={<span className="size-[7px] shrink-0 rounded-full" style={{ background: c.color }} />}
-              label={c.name}
-              count={categoryCounts.get(c.id) ?? 0}
-              onClick={() => onSelect({ kind: 'category', id: c.id })}
-            />
-          ))}
-        </div>
-      )}
+      <div className="flex flex-col gap-0.5">
+        {categories.length > 0 && (
+          <>
+            <h2 className="text-faint px-2.5 pb-1 text-[11px] font-semibold tracking-[0.08em] uppercase">Categories</h2>
+            {categories.map((c) => (
+              <NavRow
+                key={c.id}
+                active={view.kind === 'category' && view.id === c.id}
+                icon={<span className="size-[7px] shrink-0 rounded-full" style={{ background: c.color }} />}
+                label={c.name}
+                count={categoryCounts.get(c.id) ?? 0}
+                onClick={() => onSelect({ kind: 'category', id: c.id })}
+              />
+            ))}
+          </>
+        )}
+        <ManageCategoriesButton onClick={onManageCategories} />
+      </div>
     </aside>
   );
 }
@@ -133,15 +139,28 @@ function TabButton({ active, icon, label, onClick }: { active: boolean; icon: Re
 }
 
 /** Phone-only: a horizontal row of category filters shown under the All tab,
- *  standing in for the sidebar's category list where there is no sidebar. */
-export function CategoryChips({ view, categories, onSelect }: { view: View; categories: Category[]; onSelect: (view: View) => void }) {
-  if (categories.length === 0) return null;
+ *  standing in for the sidebar's category list where there is no sidebar.
+ *  The trailing "Edit" chip is the phone's entry point into the category
+ *  editor — it rides along the row that is already about categories, rather
+ *  than claiming space of its own elsewhere on a 390px screen. */
+export function CategoryChips({
+  view,
+  categories,
+  onSelect,
+  onManage,
+}: {
+  view: View;
+  categories: Category[];
+  onSelect: (view: View) => void;
+  onManage: () => void;
+}) {
   return (
     <div className="flex gap-2 overflow-x-auto px-5 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <Chip active={view.kind === 'all'} label="All" onClick={() => onSelect({ kind: 'all' })} />
       {categories.map((c) => (
         <Chip key={c.id} active={view.kind === 'category' && view.id === c.id} label={c.name} onClick={() => onSelect({ kind: 'category', id: c.id })} />
       ))}
+      <ManageCategoriesButton compact onClick={onManage} />
     </div>
   );
 }
